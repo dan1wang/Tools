@@ -1,0 +1,139 @@
+<html>
+
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <style>
+      body {
+        margin: 2em;
+        font-size: 10pt;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      }
+      button {
+        padding: 3px 10px;
+        color: #24292e;
+        border: 1px solid rgba(27, 31, 35, 0.2);
+        border-radius: .5em;
+        background-color: #eff3f6;
+        background-image: linear-gradient(-180deg, #fafbfc 0%, #eff3f6 90%);
+      }
+    </style>
+    
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/codemirror.css">
+    <script>
+      var codeStyle =
+        '.codeBlock{padding-left: 15px;border-left: 2px solid #ddd; display: block; font-family: monospace; white-space: pre; margin: 1em 0px;}.cm-keyword {color: #708;}.cm-atom {color: #219;}.cm-number {color: #164;}.cm-def {color: #00f;}.cm-variable,.cm-punctuation,.cm-property,.cm-operator {}.cm-variable-2 {color: #05a;}.cm-variable-3, .cm-s-default .cm-type {color: #085;}.cm-comment {color: #a50;}.cm-string {color: #a11;}.cm-string-2 {color: #f50;}.cm-meta {color: #555;}.cm-qualifier {color: #555;}.cm-builtin {color: #30a;}.cm-bracket {color: #997;}.cm-tag {color: #170;}.cm-attribute {color: #00c;}.cm-hr {color: #999;}.cm-link {color: #00c;}';
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/codemirror.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/addon/edit/matchbrackets.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/xml/xml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/javascript/javascript.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/css/css.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/clike/clike.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.37.0/mode/php/php.js"></script>
+    <title>Copy PHP snippet with syntax highlighting</title>
+  </head>
+
+  <body>
+    <p>
+      Simple tool for sharing code with syntax highlighting.
+    </p>
+
+    <p>
+      <button id="btnCopy">Copy</button>
+    </p>
+
+    <textarea id="txtCode" name="txtCode">
+<?php
+  // www.reddit.com/r/badcode/comments/8h275u/same_code_base_different_day/
+
+  // Get timezone name from seconds
+  $tz = timezone_name_from_abbr ('', $seconds, $daylight);
+  // Workaround for bug #44780
+  if ($tz === false)
+    $tz = timezone_name_from_abbr ('', $seconds, $daylight);
+?>
+</textarea>
+
+    <script>
+      var editor = CodeMirror.fromTextArea(
+        document.getElementById("txtCode"), {
+          lineNumbers: true,
+          mode: 'application/x-httpd-php',
+          lineWrapping: true,
+          viewportMargin: Infinity
+        });
+
+      function getFormattedHTML() {
+        var formattedHTML = '<style>' + codeStyle + '</style><pre class="codeBlock">';
+        var wrapper = editor.display.wrapper /*.cloneNode(true)*/ ;
+        var lines = wrapper.getElementsByClassName('CodeMirror-line');
+        for (var i = 0; i < lines.length; i++) {
+          if (i > 0) {
+            formattedHTML += '<br>'
+          }
+          formattedHTML += lines[i].firstChild.innerHTML;
+        }
+        formattedHTML += '</pre>';
+        return formattedHTML;
+      }
+
+      /*
+        Fix for iOS Safari
+        https://stackoverflow.com/questions/34045777/
+      */
+      function iosCopyToClipboard() {
+        var element = document.createElement("div");
+        element.innerHTML = getFormattedHTML();
+        element.contenteditable = true;
+        element.readonly = false;
+        document.body.appendChild(element);
+
+        var range = document.createRange();
+        range.selectNodeContents(element);
+
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        document.execCommand('copy');
+        
+        document.body.removeChild(element);
+      }
+
+      /*
+        The following code is ported from
+          https://gist.github.com/scottoffen/1363764209058daafed2
+      */
+      var btn = document.getElementById('btnCopy');
+      var clipboard = {
+        intercept: false,
+        hook: function(evt) {
+          if (clipboard.intercept) {
+            evt.preventDefault();
+            evt.clipboardData.setData('text/html', getFormattedHTML());
+            clipboard.intercept = false;
+          }
+        }
+      };
+
+      function onButtonClick() {
+        //https://stackoverflow.com/questions/3007480/
+        var ua = window.navigator.userAgent;
+        var iOS = !!ua.match(/iPad/i) || !!ua.match(/iPhone/i);
+        
+        if (iOS) {
+          iosCopyToClipboard();
+        } else {
+          clipboard.intercept = true;
+          document.execCommand('copy');
+        }
+      }
+      window.addEventListener('copy', clipboard.hook);
+      btn.addEventListener('click', onButtonClick);
+
+    </script>
+  </body>
+
+</html>
